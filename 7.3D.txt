@@ -1,0 +1,60 @@
+import RPi.GPIO as GPIO
+from gpiozero import PWMLED
+import time
+
+GPIO.setmode(GPIO.BCM)  # Use BCM GPIO numbering for Raspberry Pi 4
+
+TRIG = 23 
+ECHO = 24
+LED = 18
+
+
+
+print("Distance Measurement In Progress")
+
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO, GPIO.IN)
+led = PWMLED(LED)
+
+GPIO.output(TRIG, False)
+led_pwm = GPIO.PWM(LED, 100)
+
+def UltrasonicSensor():
+    print("Waiting For Sensor To Settle")
+    time.sleep(2)# 2sec pause to settle the sensor
+
+    GPIO.output(TRIG, True) #set the trig as high to initiate the pulse: 
+    time.sleep(0.0001) #some gap in the time
+    GPIO.output(TRIG, False) #set the trig back to the lower state to stop the pulse: 
+
+
+    while GPIO.input(ECHO) == 0:  #  loop that continues as long as the input on is LOW.
+        start = time.time() #record the time when it will be high
+
+    while GPIO.input(ECHO) == 1: #  loop that continues as long as the input on is HIGH.
+        end = time.time() #record end time
+
+    duration = end - start #calculate the time
+    distance = duration * 17150 #calculate the distance
+    distance = round(distance, 2) #round off to zero
+
+    print("Distance: ", distance, "cm") #print distance
+    return distance
+
+try:
+    while True:
+        distance = UltrasonicSensor()
+        if distance >= 50:
+            led.value = 0.1 #10% of the total, 100% of the led.value
+        elif 30 <= distance < 50:
+            led.value = 0.3 #30% of the total, 100% of the led.value
+        elif 15 <= distance < 30:
+            led.value = 0.7 #70% of the total, 100% of the led.value
+        elif 0 <= distance < 15:
+            led.value = 1.0 . #100% of the total, 100% of the led.value, the will be fully brightened
+             
+            
+except KeyboardInterrupt:
+    print("Ctrl+C to disable this program")
+    led.close()
+    GPIO.cleanup()
